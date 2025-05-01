@@ -4,8 +4,10 @@
  * @license MIT
  */
 
-import type { Path } from "./types.ts";
 import { getIndex } from "./utils.ts";
+
+/** Derivation Path. */
+export type Path = number[];
 
 /** Derivation path schema parsing class, includes a method for parsing derivation paths using a schema. */
 export class PathSchema {

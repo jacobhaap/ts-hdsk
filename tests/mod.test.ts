@@ -1,7 +1,7 @@
-import type { Path } from "../src/types.ts";
-import { SymmetricHD } from "../src/mod.ts";
-import { PathSchema } from "../src/path.ts";
-import { MasterKey, ChildKey } from "../src/hdKey.ts";
+import { 
+    type Path, SymmetricHD, PathSchema,
+    MasterKey, ChildKey
+} from "../src/mod.ts";
 
 /** Instance of SymmetricHD. */
 const hd = new SymmetricHD();

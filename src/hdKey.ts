@@ -4,10 +4,9 @@
  * @license MIT
  */
 
-import type { HDKey } from "./types.ts";
 import {
-    toBytes, strToIndex, encodeIndex, fingerprint,
-    verifyFp, concatBytes, splitIkm, calcSalt
+    type HDKey, toBytes, strToIndex, encodeIndex,
+    fingerprint, verifyFp, concatBytes, splitIkm, calcSalt
 } from "./utils.ts";
 import { hkdf } from "./hkdf.ts";
 
@@ -90,7 +89,7 @@ export class ChildKey extends Key {
     }
 }
 
-/** Type for an instance of a MasterKey or ChildKey. */
+/** An instance of a MasterKey or ChildKey. */
 export type KeyInstance = MasterKey | ChildKey;
 
 /** Derive an HD key from a parent key and derivation path. */
