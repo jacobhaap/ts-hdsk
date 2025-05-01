@@ -4,10 +4,21 @@
  * @license MIT
  */
 
-import type { Input, HDKey } from "./types.ts";
 import { hexToBytes } from "npm:@noble/hashes@1.7.2/utils";
 import { blake2b } from "npm:@noble/hashes@1.7.2/blake2b";
 import { hkdf } from "./hkdf.ts";
+
+/** String or Byte Array input. */
+export type Input = string | Uint8Array;
+
+/** Hierarchical Deterministic Key. */
+export type HDKey = {
+    key: Uint8Array, // Key
+    code: Uint8Array, // Chain Code
+    depth: number, // Depth in hierarchy
+    path: string, // Derivation path
+    fingerprint: Uint8Array // Fingerprint
+}
 
 /** TextEncoder instance. */
 const encoder = new TextEncoder();
