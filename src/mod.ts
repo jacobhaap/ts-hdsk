@@ -17,8 +17,8 @@ export type { HDKey } from "./utils.ts";
 /** Re-export of Path type and PathSchema class. */
 export { type Path, PathSchema } from "./path.ts";
 
-/** Re-export of KeyInstance type and Master & Child key classes. */
-export { type KeyInstance, MasterKey, ChildKey } from "./hdKey.ts";
+/** Re-export of KeyInstance type, Key, MasterKey, and ChildKey classes, and deriveHdKey function. */
+export { type KeyInstance, Key, MasterKey, ChildKey, deriveHdKey } from "./hdKey.ts";
 
 /**
  * A class providing an interface for symmetric hierarchical deterministic keys.
@@ -47,7 +47,7 @@ export class SymmetricHD {
         return new MasterKey(toBytes(secret));
     }
     /**
-     * Derive an HD key with a derivation path from an instance of a MasterKey or ChildKey.
+     * Derive an HD key from a parent key and derivation path.
      * @example
      * const path = schema.parse("m/42/0/1/0");
      * const hdKey = new SymmetricHD().derive(master, path);

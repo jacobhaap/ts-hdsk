@@ -14,7 +14,7 @@ export type Input = string | Uint8Array;
 /** Hierarchical Deterministic Key. */
 export type HDKey = {
     key: Uint8Array, // Key
-    code: Uint8Array, // Chain Code
+    code: Uint8Array, // Chain code
     depth: number, // Depth in hierarchy
     path: string, // Derivation path
     fingerprint: Uint8Array // Fingerprint
@@ -26,6 +26,16 @@ const encoder = new TextEncoder();
 /** Checks if a string is hexadecimal, returning a boolean value. */
 function isHex(str: string): boolean {
     return str.length % 2 === 0 && /^[0-9a-fA-F]+$/.test(str);
+}
+
+/** Check if a string is numeric. */
+function isNumber(str: string): boolean {
+    return /^\d+$/.test(str);
+}
+
+/** Check if a string is alphabetic. */
+function isString(str: string): boolean {
+    return /^[a-zA-Z\-]+$/.test(str);
 }
 
 /** Convert a UTF-8 encoded string to a Uint8Array. */
@@ -58,24 +68,19 @@ export function toBytes(input: Input): Uint8Array {
     }
 }
 
+/** Concatenate two Uint8Arrays, in the order they are received. */
+export function concatBytes(a: Uint8Array, b: Uint8Array): Uint8Array {
+    const result = new Uint8Array(a.length + b.length); // Allocate Uint8Array for a + b
+    result.set(a, 0); // Insert 'a' at the beginning 
+    result.set(b, a.length); // Insert 'b' at the end
+    return result; // Return concatenated bytes
+}
+
 /** Calculate a domain-separated salt for a secret. */
 export function calcSalt(secret: Uint8Array): Uint8Array {
     const label = toBytes("symmetric_hd/salt"); // Domain-separated label
     const mac = blake2b(secret, { key: label, dkLen: 16 }); // Blake2b MAC with a message 'secret' and key of 'label'
-    const bytes = new Uint8Array(label.length + mac.length); // Allocate Uint8Array for 'label' + 'mac'
-    bytes.set(label, 0); // Insert 'label' at the beginning
-    bytes.set(mac, label.length); // Insert 'mac' at the end
-    return bytes; // Return bytes of 'label' + 'mac'
-}
-
-/** Check if a string numeric. */
-function isNumber(str: string): boolean {
-    return /^\d+$/.test(str);
-}
-
-/** Check if a string is alphabetic. */
-function isString(str: string): boolean {
-    return /^[a-zA-Z\-]+$/.test(str);
+    return concatBytes(label, mac); // Return bytes of 'label' + 'mac'
 }
 
 /** Obtain an index number in the range 0 to 2^31 - 1 from a string. */
@@ -156,15 +161,7 @@ export function verifyFp(child: HDKey, parent: HDKey): boolean {
     return result === 0; // Return a boolean result of the byte comparison
 }
 
-/** Concatenate two Uint8Arrays, in the order they are received. */
-export function concatBytes(a: Uint8Array, b: Uint8Array): Uint8Array {
-    const result = new Uint8Array(a.length + b.length); // Allocate Uint8Array for a + b
-    result.set(a, 0); // Insert 'a' at the beginning 
-    result.set(b, a.length); // Insert 'b' at the end
-    return result; // Return concatenated bytes
-}
-
-/** Split input key material into an array of Uint8Arrays, based on an array of sizes. */
+/** Split initial keying material into an array of Uint8Arrays, based on an array of sizes. */
 export function splitIkm(bytes: Uint8Array, size: number[]): Uint8Array[] {
     const result: Uint8Array[] = []; // Initialize result array for the split ikm
     let offset = 0; // Start at index 0 in 'bytes'

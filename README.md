@@ -1,5 +1,5 @@
 # TypeScript | Symmetric HD
-Symmetric HD is an implementation of Hierarchical Deterministic (HD) keys in a symmetric context. All functionality for the derivation of HD keys, and handling of derivation paths, is available from the `SymmetricHD` class. Blake2b and an HKDF-Blake2b implementation are utilized as the cryptographic primitives.
+Symmetric HD is an implementation of Hierarchical Deterministic (HD) keys in a symmetric context. Blake2b and an HKDF-Blake2b implementation are utilized as the cryptographic primitives.
 
 Natively in **TypeScript**, with **ESM** and **CommonJS** compatibility. To get started, install the library:
 ```
@@ -10,8 +10,10 @@ deno add jsr:@iacobus/hd
 npm install @iacobus/hd
 ```
 
+All functionality for the derivation of HD keys, and handling of derivation paths, is available from the `SymmetricHD` class, and as standalone exports.
+
 ## HDKey Type
-All keys derived by this library are of the `HDKey` type, that includes the 32 byte symmetric key, the chain code, and metadata including the depth in the hierarchy, derivation path, and the key's fingerprint.
+All keys derived by this library are of the `HDKey` type, an object that holds the 32 byte symmetric key, the chain code, and metadata including the depth in the hierarchy, derivation path, and the key's fingerprint.
 ```ts
 type HDKey = {
     key: Uint8Array, // Key

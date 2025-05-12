@@ -49,7 +49,7 @@ function hkdf_expand(prk: Uint8Array, info?: Uint8Array, length: number = 32): U
 }
 
 /**
- * Implementation of HKDF using a Blake2b MAC. Derives a key from an input key material across extract + expand steps.
+ * Implementation of HKDF using a Blake2b MAC. Derives a key from an initial keying material across extract + expand steps.
  */
 export function hkdf(ikm: Uint8Array, salt: Uint8Array | undefined, info: Uint8Array | undefined, length?: number): Uint8Array {
     const prk = hkdf_extract(ikm, salt as Uint8Array | undefined); // Obtain 'prk' from 'hkdf_extract' step
