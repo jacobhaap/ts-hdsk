@@ -9,7 +9,12 @@ import { getIndex } from "./utils.ts";
 /** Derivation Path. */
 export type Path = number[];
 
-/** Derivation path schema parsing class, includes a method for parsing derivation paths using a schema. */
+/**
+ * Validate and parse a derivation path schema from a string. Creates an instance of a schema.
+ * @example
+ * const str: string = "m / application: any / purpose: any / context: any / index: num";
+ * const schema = new PathSchema(str);
+ */
 export class PathSchema {
     public schema: [string, string][]; // Define public 'schema' property as a Schema ([string, string][])
     // Constructor to parse & validate a derivation path schema

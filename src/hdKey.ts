@@ -10,8 +10,13 @@ import {
 } from "./utils.ts";
 import { hkdf } from "./hkdf.ts";
 
-/** Abstract base class for HD Keys. */
-abstract class Key {
+/**
+ * An instance of an HD Key.
+ * Create a new instance from any existing {@link HDKey} object.
+ * @example
+ * const key = new Key(hdKey);
+ */
+export class Key {
     public key: HDKey; // Define public 'key' property as an HDKey
     // Constructor to define 'this.key'
     constructor(key: HDKey) {
@@ -47,7 +52,12 @@ abstract class Key {
     }
 }
 
-/** Master key class that inherits Key for master key derivation. */
+/**
+ * An instance of a Master HD Key.
+ * Derive a master key from a secret.
+ * @example
+ * const master = new MasterKey(secret);
+ */
 export class MasterKey extends Key {
     // Constructor to derive a master key
     constructor(secret: Uint8Array) {
@@ -68,7 +78,12 @@ export class MasterKey extends Key {
     }
 }
 
-/** Child key class that inherits Key for child key derivation. */
+/**
+ * An instance of a Child HD Key.
+ * Derive a child key from a parent key, at a chosen index.
+ * @example
+ * const child = new ChildKey(hdKey, 42);
+ */
 export class ChildKey extends Key {
     // Constructor to derive a child key
     constructor(parent: HDKey, index: number) {
@@ -89,11 +104,16 @@ export class ChildKey extends Key {
     }
 }
 
-/** An instance of a MasterKey or ChildKey. */
-export type KeyInstance = MasterKey | ChildKey;
+/** An instance of a Key, MasterKey, or ChildKey. */
+export type KeyInstance = Key | MasterKey | ChildKey;
 
-/** Derive an HD key from a parent key and derivation path. */
-export function deriveHdKey(parent: MasterKey | ChildKey, path: number[]): ChildKey {
+/**
+ * Derive an HD key from a parent key and derivation path.
+ * @example
+ * const path = schema.parse("m/42/0/1/0");
+ * const hdKey = deriveHdKey(master, path);
+ */
+export function deriveHdKey(parent: KeyInstance, path: number[]): ChildKey {
     let key = parent.deriveChild(path[0]); // Initialize 'key' with first index from the path
     // Iterate over indices of the derivation path
     for (let i = 1; i < path.length; i++) {
