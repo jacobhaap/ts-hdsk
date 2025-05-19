@@ -1,66 +1,95 @@
-import { 
-    type Path, SymmetricHD, PathSchema,
-    MasterKey, ChildKey
-} from "../src/mod.ts";
+import { SymmetricHD } from "../src/mod.ts";
+import { bytesToHex } from "@noble/hashes/utils";
 
-/** Instance of SymmetricHD. */
-const hd = new SymmetricHD();
+/** Vector is an object for a test vector. */
+type Vector = {
+    path: string,
+    key: string
+}
 
-// Initialize variables to be shared across tests
-let schema: PathSchema
-let path: Path;
-let master: MasterKey;
-let parent: MasterKey;
-let child: ChildKey;
+/** vectors are Symmetric HD test vectors. */
+const vectors: Vector[] = [
+    {
+        "path": "m/42/0/1/0",
+        "key": "238cf83c3ee7c2596b38d9b93ba9f15c757dbb65870060422ecec51073019d39"
+    },
+    {
+        "path": "m/42/0/1/1",
+        "key": "d174c452c402f765d6f85a360eaa91bb6386d5b2de737178fa320de4afc435cb"
+    },
+    {
+        "path": "m/42/0/1/2",
+        "key": "e0dbf06dfcaeb0bc2241c111a44b1dcd11aa1a73a149a07182ff141097018791"
+    },
+    {
+        "path": "m/42/0/1/3",
+        "key": "0eb21f70c0677a335546324faf382935eca4e887aa04c0169c018fecd546d22d"
+    },
+    {
+        "path": "m/42/0/1/4",
+        "key": "a8505914a849a7a37e81847f539914838cd53d1501503439c0688605ce204424"
+    },
+    {
+        "path": "m/42/0/1/5",
+        "key": "6baad567810839d4ccb92558f7174643a6fd8a64723bb1d49254c9a8d283441d"
+    },
+    {
+        "path": "m/42/0/1/6",
+        "key": "63ea6ca6530c534756f77aa7bfbad339137230318f4e31b46bc8eb4e0c82a702"
+    },
+    {
+        "path": "m/42/0/1/7",
+        "key": "cf064451fdff06a471cddf625647d230bead69436a90ec811ff4c6cf8d67a7b2"
+    },
+    {
+        "path": "m/42/0/1/8",
+        "key": "f2f5a7e494f0890467e577fa8a344d4bbb1d18d30e486b5e903cf1a48bb59476"
+    },
+    {
+        "path": "m/42/0/1/9",
+        "key": "1c9e5502c36d7b7ae12b233fc89cf96b983dc2b9fbc6d86658b0d5f0a56e5b61"
+    },
+    {
+        "path": "m/42/0/1/10",
+        "key": "f8b16a5125d958f2a6c13d830004de7ec732213cb4f83df62f40a7af329cf213"
+    },
+    {
+        "path": "m/42/0/1/11",
+        "key": "9606d6ab5fcb0efd7e1c47c8f86be621038ca8d656451a760d2b5fe3aebd24e7"
+    },
+    {
+        "path": "m/42/0/1/12",
+        "key": "824e9bc3ba2d41e3f310c4359c16afd37d6132d4fdf5e60e7283538aea784edb"
+    },
+    {
+        "path": "m/42/0/1/14",
+        "key": "c002c310e7e4a8b8c1750614a9933aaf5d56b11f19b367bc60d7061e9efb23fc"
+    },
+    {
+        "path": "m/42/0/1/15",
+        "key": "87f6f5cecc075aae4f8c1506dc48977b2a3a8362f49af01b44bb8df229d4a168"
+    }
+]
 
-// Test for 'schema' method of SymmetricHD
-// Validates and parses the string of a derivation path schema
-// console.assert checks that 'schema' is an instance of a PathSchema
-Deno.test(`Method 'schema' of SymmetricHD parses a path schema`, () => {
-    const str: string = "m / application: any / purpose: any / context: any / index: num";
-    schema = hd.schema(str);
-    console.assert(schema instanceof PathSchema, `No instance of 'PathSchema' returned`);
-})
-
-// Test for 'parse' method of PathSchema
-// Validates and parses the string of a derivation path
-// console.assert checks that 'path' is a Path (number[])
-Deno.test(`Method 'parse' of PathSchema parses a derivation path`, () => {
-    path = schema.parse("m/42/0/1/0");
-    console.assert(typeof path[0] === "number", `Failed to parse derivation path`);
-})
-
-// Test for 'master' method of SymmetricHD
-// Derives a master key from a hex-encoded secret string
-// console.assert checks that 'master' is an instance of a MasterKey
-Deno.test(`Method 'master' of SymmetricHD derives a master key`, () => {
-    const secret: string = "747261636B6572706C61747A";
-    master = hd.master(secret);
-    console.assert(master instanceof MasterKey, `No instance of 'MasterKey' returned`);
-})
-
-// Test for 'deriveChild' method of a key instance
-// Derives a child key from a parent at index '2019'
-// console.assert checks that 'child' is an instance of a ChildKey
-Deno.test(`Method 'deriveChild' of a key instance derives a child key`, () => {
-    const secret: string = "7265706C696372";
-    parent = hd.master(secret);
-    child = parent.deriveChild(2019);
-    console.assert(child instanceof ChildKey, `No instance of 'ChildKey' returned`);
-})
-
-// Test for 'derive' method of SymmetricHD
-// Derives a key in a nested hierarchy from a master key and derivation path
-// console.assert checks that 'key' is an instance of a ChildKey
-Deno.test(`Method 'derive' of SymmetricHD derives a key in a nested hierarchy`, () => {
-    const key = hd.derive(master, path);
-    console.assert(key instanceof ChildKey, `No instance of 'ChildKey' returned`);
-})
-
-// Test for 'lineage' method of a key instance
-// Verifies the lineage of a child key against a parent key
-// console.assert checks that 'lineage' is true
-Deno.test(`Method 'lineage' of a key instance verifies a key's lineage`, () => {
-    const lineage = child.lineage(parent.key);
-    console.assert(lineage === true, `Key lineage verification failed, fingerprint mismatch`);
-})
+// Test for SymmetricHD
+// First, a schema is parsed, and a master key is derived from a secret of a hex-encoded string.
+// Then, the test vectors are iterated over, for each using the derivation path to derive an HD
+// key from the master key, then checking that the embedded key in the derived HD key matches the
+// vector key. Finally, for each HD key derived, a child at index 42 is derived, which is then
+// used to test lineage verification with the child key and parent HD key.
+Deno.test(`SymmetricHD derives HD keys`, () => {
+    const hd = new SymmetricHD(); // New SymmetricHD instance
+    const str: string = "m / application: any / purpose: any / context: any / index: num"; // Schema string
+    const schema = hd.schema(str); // Parse the schema to create a new schema instance
+    const secret: string = "747261636B6572706C61747A"; // Define a secret as a hex string
+    const master = hd.master(secret); // Derive a master key
+    for (const {path, key} of vectors) {
+        const dp = schema.parse(path); // Parse the vector derivation path
+        const dk = hd.derive(master, dp); // Derive an HD key from the master key and path
+        const dkHex = bytesToHex(dk.key.key); // Encode the embedded key as hex
+        console.assert(dkHex === key, `mismatch for ${path}: expected "${key}", got "${dkHex}"`);
+        const child = dk.deriveChild(42); // Derive a child key at index 42
+        const lineage = child.lineage(dk.key); // Verify the lineage of the child
+        console.assert(lineage === true, `invalid key lineage encountered for child of "${dkHex}"`);
+    }
+});
