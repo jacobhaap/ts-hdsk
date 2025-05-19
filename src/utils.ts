@@ -8,10 +8,10 @@ import { hexToBytes } from "npm:@noble/hashes@1.7.2/utils";
 import { blake2b } from "npm:@noble/hashes@1.7.2/blake2b";
 import { hkdf } from "./hkdf.ts";
 
-/** String or Byte Array input. */
+/** Input is a string or Uint8Array. */
 export type Input = string | Uint8Array;
 
-/** Hierarchical Deterministic Key. */
+/** HDKey is a Hierarchical Deterministic Key. */
 export type HDKey = {
     key: Uint8Array, // Key
     code: Uint8Array, // Chain code
@@ -20,30 +20,30 @@ export type HDKey = {
     fingerprint: Uint8Array // Fingerprint
 }
 
-/** TextEncoder instance. */
+/** encoder is a TextEncoder instance. */
 const encoder = new TextEncoder();
 
-/** Checks if a string is hexadecimal, returning a boolean value. */
+/** isHex checks if a string is hexadecimal, returning a boolean value. */
 function isHex(str: string): boolean {
     return str.length % 2 === 0 && /^[0-9a-fA-F]+$/.test(str);
 }
 
-/** Check if a string is numeric. */
+/** isNumber checks if a string is numeric. */
 function isNumber(str: string): boolean {
     return /^\d+$/.test(str);
 }
 
-/** Check if a string is alphabetic. */
+/** isString checks if a string is alphabetic. */
 function isString(str: string): boolean {
     return /^[a-zA-Z\-]+$/.test(str);
 }
 
-/** Convert a UTF-8 encoded string to a Uint8Array. */
+/** utf8ToBytes converts a UTF-8 encoded string to a Uint8Array. */
 function utf8ToBytes(str: string): Uint8Array {
     return new Uint8Array(encoder.encode(str));
 }
 
-/** Convert a string (UTF-8 or Hex) to a Uint8Array. */
+/** strToBytes converts a string (UTF-8 or Hex) to a Uint8Array. */
 function strToBytes(str: string): Uint8Array {
     // Check if the string is hex encoded
     if (isHex(str))  {
@@ -54,21 +54,35 @@ function strToBytes(str: string): Uint8Array {
     return utf8ToBytes(str);
 }
 
+/** intToBytes encodes a 32 bit integer as a 4 byte Uint8Array. */
+function intToBytes(int: number): Uint8Array {
+    const buf = new Uint8Array(4);
+    buf[0] = (int >>> 24) & 0xff;
+    buf[1] = (int >>> 16) & 0xff;
+    buf[2] = (int >>> 8) & 0xff;
+    buf[3] = int & 0xff;
+    return buf;
+}
+
 /**
- * Returns a Uint8Array from {@link Input}. When the input is a string,
- * it is handled as either hex encoded or UTF-8 encoded.
+ * toBytes returns a uint8 slice from an input.
+ * 
+ * Supports string, number, and byte input. When the input is a string,
+ * it is handled as either hex or UTF-8 encoded.
  */
-export function toBytes(input: Input): Uint8Array {
+export function toBytes(input: string | number | Uint8Array): Uint8Array {
     if (typeof input === "string") {
         return strToBytes(input); // Convert to bytes, when 'input' is a string
+    } else if (typeof input === "number") {
+        return intToBytes(input); // Convert integer to bytes, when 'input' is a number
     } else if (input instanceof Uint8Array) {
         return input; // Return 'input' when already bytes (Uint8Array).
     } else {
-        throw new Error(`invalid byte conversion`);
+        throw new Error(`invalid type for byte conversion`);
     }
 }
 
-/** Concatenate two Uint8Arrays, in the order they are received. */
+/** concatBytes concatenates two Uint8Arrays, in the order they are received. */
 export function concatBytes(a: Uint8Array, b: Uint8Array): Uint8Array {
     const result = new Uint8Array(a.length + b.length); // Allocate Uint8Array for a + b
     result.set(a, 0); // Insert 'a' at the beginning 
@@ -76,14 +90,14 @@ export function concatBytes(a: Uint8Array, b: Uint8Array): Uint8Array {
     return result; // Return concatenated bytes
 }
 
-/** Calculate a domain-separated salt for a secret. */
+/** calcSalt calculates a domain-separated salt for a secret. */
 export function calcSalt(secret: Uint8Array): Uint8Array {
     const label = toBytes("symmetric_hd/salt"); // Domain-separated label
     const mac = blake2b(secret, { key: label, dkLen: 16 }); // Blake2b MAC with a message 'secret' and key of 'label'
     return concatBytes(label, mac); // Return bytes of 'label' + 'mac'
 }
 
-/** Obtain an index number in the range 0 to 2^31 - 1 from a string. */
+/** strToIndex obtains an index number in the range 0 to 2^31 - 1 from a string. */
 export function strToIndex(str: string): number {
     const hash = blake2b(str, { dkLen: 32 }); // Take a blake2b hash of the string
     const buf = new DataView(new Uint8Array(hash).buffer); // Dataview of the hash digest
@@ -91,12 +105,12 @@ export function strToIndex(str: string): number {
     return value % 0x80000000; // Return index number in the defined range
 }
 
-/** Check if an index number is in the range 0 to 2^31 - 1. */
+/** isValidIndex checks if an index number is in the range 0 to 2^31 - 1. */
 function isValidIndex(i: number): boolean {
     return Number.isInteger(i) && i >= 0 && i <= 0x7FFFFFFF;
 }
 
-/** Get an index number from a string, with type enforcement. */
+/** getIndex gets an index number from a string, with type enforcement. */
 export function getIndex(index: string, type: string): number {
     if (!["num", "str", "any"].includes(type)) {
         // Throw an error if the type is invalid
@@ -131,17 +145,7 @@ export function getIndex(index: string, type: string): number {
     }
 }
 
-/** Encode a 32 bit integer index number as a 4 byte Uint8Array. */
-export function encodeIndex(i: number): Uint8Array {
-    const buf = new Uint8Array(4);
-    buf[0] = (i >>> 24) & 0xff;
-    buf[1] = (i >>> 16) & 0xff;
-    buf[2] = (i >>> 8) & 0xff;
-    buf[3] = i & 0xff;
-    return buf;
-}
-
-/** Calculate a fingerprint from a parent key and child key. */
+/** fingerprint calculates a fingerprint from a parent key and child key. */
 export function fingerprint(parent: Uint8Array, child: Uint8Array): Uint8Array {
     const salt = calcSalt(parent); // Derive a deterministic 'salt' from the parent key
     const info = toBytes("symmetric_hd/fingerprint") // Use domain-separated label as the 'info'
@@ -149,7 +153,7 @@ export function fingerprint(parent: Uint8Array, child: Uint8Array): Uint8Array {
     return blake2b(child, { key: key, dkLen: 16 }); // Return blake2b MAC with a message 'child' and key of 'key'
 }
 
-/** Verify a child key's fingerprint against a parent key. */
+/** verifyFp verifies a child key's fingerprint against a parent key. */
 export function verifyFp(child: HDKey, parent: HDKey): boolean {
     const fp1 = child.fingerprint; // Extract the child fingerprint as 'fp1'
     const fp2 = fingerprint(parent.key, child.key); // Derive 'fp2' from the parent and child keys
@@ -161,7 +165,7 @@ export function verifyFp(child: HDKey, parent: HDKey): boolean {
     return result === 0; // Return a boolean result of the byte comparison
 }
 
-/** Split initial keying material into an array of Uint8Arrays, based on an array of sizes. */
+/** splitIkm split initial keying material into an array of Uint8Arrays, based on an array of sizes. */
 export function splitIkm(bytes: Uint8Array, size: number[]): Uint8Array[] {
     const result: Uint8Array[] = []; // Initialize result array for the split ikm
     let offset = 0; // Start at index 0 in 'bytes'

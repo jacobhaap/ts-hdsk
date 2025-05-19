@@ -6,11 +6,11 @@
 
 import { getIndex } from "./utils.ts";
 
-/** Derivation Path. */
+/** Path is a derivation path. */
 export type Path = number[];
 
 /**
- * Validate and parse a derivation path schema from a string. Creates an instance of a schema.
+ * PathSchema validates and parses a derivation path schema from a string. Creates an instance of a schema.
  * @example
  * const str: string = "m / application: any / purpose: any / context: any / index: num";
  * const schema = new PathSchema(str);
@@ -46,7 +46,7 @@ export class PathSchema {
         this.schema = result; // Return the parsed schema
     }
     /**
-     * Validate and parse a derivation path from a string, using a path schema.
+     * parse validates and parses a derivation path from a string, using a path schema.
      * @example
      * const path = schema.parse("m/42/0/1/0");
      */

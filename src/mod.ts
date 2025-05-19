@@ -21,13 +21,13 @@ export { type Path, PathSchema } from "./path.ts";
 export { type KeyInstance, Key, MasterKey, ChildKey, deriveHdKey } from "./hdKey.ts";
 
 /**
- * A class providing an interface for symmetric hierarchical deterministic keys.
+ * SymmetricHD is a class providing an interface for symmetric hierarchical deterministic keys.
  * @example
  * const hd = new SymmetricHD();
  */
 export class SymmetricHD {
     /**
-     * Validate and parse a derivation path schema from a string.
+     * schema validates and parses a derivation path schema from a string.
      * @example
      * const str: string = "m / application: any / purpose: any / context: any / index: num";
      * const schema = new SymmetricHD().schema(str);
@@ -37,7 +37,7 @@ export class SymmetricHD {
         return new PathSchema(schema);
     }
     /**
-     * Derive a master key from a secret.
+     * master derives a master key from a secret.
      * @example
      * const secret: string = "747261636B6572706C61747A";
      * const master = new SymmetricHD().master(secret);
@@ -47,7 +47,7 @@ export class SymmetricHD {
         return new MasterKey(toBytes(secret));
     }
     /**
-     * Derive an HD key from a parent key and derivation path.
+     * derive derives an HD key from a parent key and derivation path.
      * @example
      * const path = schema.parse("m/42/0/1/0");
      * const hdKey = new SymmetricHD().derive(master, path);
