@@ -30,7 +30,7 @@ jobs:
         with:
           deno-version: v2.x
       - name: Build NPM Package with dnt
-        run: deno run -A scripts/build_npm.ts @jacobhaap/symmetric-hd ${{steps.get_tag_version.outputs.TAG_VERSION}}
+        run: deno run -A scripts/build_npm.ts @jacobhaap/hdsk ${{steps.get_tag_version.outputs.TAG_VERSION}}
       - name: Publish to GitHub Packages
         run: cd npm && npm publish
         env:
