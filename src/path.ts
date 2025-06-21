@@ -1,79 +1,76 @@
 /**
  * @fileoverview Provides functionality for parsing derivation paths and schemas.
+ * @module
  * @author Jacob V. B. Haap <iacobus.xyz>
  * @license MIT
  */
 
+import type { CHash } from "npm:@noble/hashes@1.8.0/utils";
 import { getIndex } from "./utils.ts";
 
-/** Path is a derivation path. */
-export type Path = number[];
+/** HDSchema is a derivation path schema. */
+export type HDSchema = [string, string][];
+
+/** HDPath is a derivation path. */
+export type HDPath = number[];
 
 /**
- * PathSchema validates and parses a derivation path schema from a string. Creates an instance of a schema.
+ * newSchema parses a new derivation path schema from a given string.
  * @example
  * const str: string = "m / application: any / purpose: any / context: any / index: num";
- * const schema = new PathSchema(str);
+ * const schema = newSchema(str);
  */
-export class PathSchema {
-    public schema: [string, string][]; // Define public 'schema' property as a Schema ([string, string][])
-    // Constructor to parse & validate a derivation path schema
-    constructor(schema: string) {
-        const segments = schema.split(" / "); // Split the schema into segments
-        if (segments.length > 256) {
-            // Throw an error if the schema exceeds 256 segments (including the root segment)
-            throw new Error(`derivation path schema cannot exceed 256 segments, got "${segments.length}"`);
-        }
-        if (segments[0] !== "m") {
-            // Throw an error if the root segment is not identified by 'm'
-            throw new Error(`root segment must be designated by "m", got "${segments[0]}"`);
-        }
-        const allowedTypes = new Set(["str", "num", "any"]); // Allow strings and numbers ('any' for either)
-        const result: [string, string][] = []; // Initialize 'result' array for the parsed schema
-        // Iterate over segments of the schema, starting after the root
-        for (const segment of segments.slice(1)) {
-            const [label, type] = segment.split(":").map(s => s.trim()); // Separate the label and the type
-            if (!label || !type) {
-                // Mark invalid if the label or type is missing
-                throw new Error(`invalid segment, "${segment}"`);
-            }
-            if (!allowedTypes.has(type)) {
-                // Mark invalid if the type does not match 'allowedTypes'
-                throw new Error(`invalid type "${type}" for label "${label}"`);
-            }
-            result.push([label, type]); // Add the label and type to the parsed results
-        }
-        this.schema = result; // Return the parsed schema
+export function newSchema(str: string): HDSchema {
+    const segments = str.split(" / ");
+    if (segments.length > 256) {
+        throw new RangeError(`derivation path schema cannot exceed 256 segments, got "${segments.length}"`);
     }
-    /**
-     * parse validates and parses a derivation path from a string, using a path schema.
-     * @example
-     * const path = schema.parse("m/42/0/1/0");
-     */
-    parse(path: string): Path {
-        const pathArray = path.split("/"); // Split the path into segments
-        const [root, ...indices] = pathArray; // Isolate the root from the indices
-        if (root != "m") {
-            // Throw an error if the root segment is not identified by 'm'
-            throw new Error(`master key must be designated by "m", got "${root}"`);
-        }
-        if (indices.length > this.schema.length) {
-            // Throw an error if the path exceeds the schema length
-            throw new Error(`too many indices: got "${indices.length}", expected "${this.schema.length}"`);
-        }
-        const result: number[] = []; // Initialize 'result' array for the parsed path
-        // Iterate over the indices
-        for (let i = 0; i < indices.length; i++) {
-            const [label, type] = this.schema[i]; // Get label and type for the current index 'i' from the schema
-            let index: number;
-            try {
-                index = getIndex(indices[i], type); // Parse the current index, enforcing the type from the schema
-            } catch (error) {
-                // Throw the error returned by 'getIndex' with the label and position 
-                throw new Error(`position "${i}" label "${label}", ${error}`);
-            }
-            result.push(index); // Add the parsed index to the result
-        }
-        return result; // Return the parsed derivation path
+    if (segments[0] !== "m") {
+        throw new SyntaxError(`root segment in schema must be designated by "m", got "${segments[0]}"`);
     }
+    const allowed = new Set(["str", "num", "any"]); // Allow strings, numbers, or either
+    const result: HDSchema = []; // Allocate array for the parsed schema
+    for (const segment of segments.slice(1)) {
+        const [label, type] = segment.split(":").map(s => s.trim()); // Separate the label and the type
+        if (!label || !type) {
+            throw new SyntaxError(`invalid segment in schema, "${segment}"`);
+        }
+        if (!allowed.has(type)) {
+            throw new TypeError(`invalid type "${type}" for label "${label} in schema"`);
+        }
+        result.push([label, type]); // Add the label and type to the parsed results
+    }
+    return result; // Return parsed schema
+}
+
+/**
+ * newPath parses a new derivation path from a given hash, string, and schema.
+ * @example
+ * const path = newPath(h, "m/42/0/1/0", schema);
+ */
+export function newPath(h: CHash, str: string, schema: HDSchema): HDPath {
+    const pathArray = str.split("/");
+    const [root, ...indices] = pathArray;
+    if (root != "m") {
+        throw new SyntaxError(`master key in derivation path must be designated by "m", got "${root}"`);
+    }
+    if (indices.length > schema.length) {
+        throw new RangeError(`too many indices in derivation path: got "${indices.length}", expected "${schema.length}"`);
+    }
+    const result: number[] = []; // Allocate array for the parsed path
+    for (let i = 0; i < indices.length; i++) {
+        const [label, type] = schema[i]; // Get label and type for the current index from the schema
+        let index: number;
+        try {
+            index = getIndex(h, indices[i], type); // Parse the current index, enforcing the type from the schema
+        } catch (error) {
+            if (error instanceof Error) {
+                const IndexError = error.constructor as new (message: string) => Error;
+                throw new IndexError(`derivation path position ${i} label "${label}", ${error.message}`);
+            }
+            throw error;
+        }
+        result.push(index); // Add the parsed index to the result
+    }
+    return result; // Return the parsed derivation path
 }

@@ -4,11 +4,15 @@ stages:
   - publish
 
 check:
-  image: 'denoland/deno:debian-2.3.1'
+  image: denoland/deno:debian-2.3.6
   stage: check
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      exists:
+      - "**/*.ts"
   script:
+    - deno lint src
+    - deno test
     - deno publish --dry-run
     - apt-get update && apt-get install -y curl gnupg
     - curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
@@ -18,10 +22,12 @@ check:
     - npm publish --dry-run --tag check
 
 build:
-  image: 'denoland/deno:debian-2.3.1'
+  image: denoland/deno:debian-2.3.6
   stage: build
   rules:
     - if: $CI_COMMIT_TAG
+      exists:
+      - "**/*.ts"
   script:
     - export TAG_VERSION=${CI_COMMIT_TAG/v/}
     - apt-get update && apt-get install -y curl gnupg
@@ -33,12 +39,14 @@ build:
       - npm/
 
 publish:
-  image: 'node:20'
+  image: node:20
   stage: publish
   needs:
     - build
   rules:
     - if: $CI_COMMIT_TAG
+      exists:
+      - "**/*.js"
   id_tokens:
     SIGSTORE_ID_TOKEN:
       aud: sigstore

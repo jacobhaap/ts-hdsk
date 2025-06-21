@@ -1,7 +1,5 @@
-# TypeScript | Symmetric HD
-Symmetric HD is an implementation of Hierarchical Deterministic (HD) keys in a symmetric context. Blake2b and an HKDF-Blake2b implementation are utilized as the cryptographic primitives.
-
-Natively in **TypeScript**, with **ESM** and **CommonJS** compatibility. To get started, install the library:
+# TypeScript HDSK
+TypeScript HDSK is an implementation of Hierarchical Deterministic Symmetric Keys, a method of symmetric key generation using schema-driven derivation paths for generating nodes in hierarchies descending from master keys. Natively in **TypeScript**, with **ESM** and **CommonJS** compatibility. To get started, install the library:
 ```
 # Deno
 deno add jsr:@iacobus/hd
@@ -9,109 +7,110 @@ deno add jsr:@iacobus/hd
 # Node.js
 npm install @iacobus/hd
 ```
+This is a reference implementation of the specification titled *["Hierarchical Deterministic Symmetric Keys"](https://gist.github.com/jacobhaap/d75c96f61bcc32154498842e620a3261)*.
 
-All functionality for the derivation of HD keys, and handling of derivation paths, is available from the `SymmetricHD` class, and as standalone exports.
+Both stateful and stateless functionality are provided, across three entry points. A stateful encapsulation of key derivation, and the handling of schemas and derivation paths is provided by the **@iacobus/hd** entry point.
 
-## HDKey Type
-All keys derived by this library are of the `HDKey` type, an object that holds the 32 byte symmetric key, the chain code, and metadata including the depth in the hierarchy, derivation path, and the key's fingerprint.
+## Types
+Parsed derivation path schemas are of the `HDPath` type, and parsed derivation paths are of the `HDSchema` type. All keys derived by this library are of the `HDKey` type, an object that holds the 32 byte cryptographic key, 32 byte chain code, an integer representing the hierarchical depth, and a 16 byte fingerprint.
 ```ts
+export type HDSchema = [string, string][];
+
+export type HDPath = number[];
+
 type HDKey = {
-    key: Uint8Array, // Key
-    code: Uint8Array, // Chain Code
-    depth: number, // Depth in hierarchy
-    path: string, // Derivation path
-    fingerprint: Uint8Array // Fingerprint
+    key: Uint8Array,
+    code: Uint8Array,
+    depth: number,
+    fingerprint: Uint8Array
 }
 ```
 
 # Derivation Paths
-When deriving an HD key in a nested hierarchy, a derivation path is required. All derivation paths are required to follow a schema, which may be defined with the `schema` method of **SymmetricHD**, which returns a new instance of a `PathSchema`. Derivation paths can be validated and parsed against a schema with the `parse` method of a **PathSchema** instance.
+When generating a node in a hierarchy descending from a master key, a derivation path is required. The expected length and expected types for child key indices of a derivation path is enforced by a derivation path schema. Stateless functionality for the handling of schemas and derivation paths is provided by the **@iacobus/hd/path** entry point.
 
-## Path Schemas
-Schemas assign labels to indices of a derivation path, as a method to assign a purpose or context. Labels are typed, as either a string `str`, integer `num`, or `any` for either of the two. A derivation path schema must always begin with `m` to designate the master key. Schemas are divided into segments, with each segment containing a label and type as `label: type`, and not exceeding 256 segments in the schema (including the master key segment). The *schema* method of **SymmetricHD** expects a ***schema*** as a *string*.
+### Schemas
+Schemas are strings that contain a series of segments to define the expected pattern of a derivation path. Each segment of a schema contains a label and a type for labeling of indices. Permitted types are ***str*** for string, ***num*** for integer, and ***any*** for either. A schema can be parsed from a string using the `Hdsk.schema` method, returning a new **Schema** instance. The public `Schema.schema` property contains the parsed schema as an *HDSchema* (array of tuples). Stateless functionality for schema parsing is available from the `newSchema` function.
 
-*Default schema:*
+### Paths
+Derivation paths are strings that define a hierarchical sequence of child key indices, descending from a master key. Each segment in the path corresponds to a level in the hierarchy, and its value may be an integer or a string. A derivation path can be parsed from a string using the `Schema.parse` method, returning a parsed derivation path as an *HDPath* (array of integers). A hash function is required for parsing. Stateless functionality for derivation path parsing is available from the `newPath` function.
+
+### Example
+```ts
+import { Hdsk } from "@iacobus/hd";
+import { sha256 } from "@noble/hashes/sha2";
+
+// Parse the derivation path schema
+const str = "m / application: any / purpose: any / context: any / index: num";
+const schema = new Hdsk().schema(str);
+
+// Parse the derivation path using the schema
+const h = sha256;
+const path = schema.parse(h, "m/42/0/1/0");
 ```
-m / application: any / purpose: any / context: any / index: num
-```
+
+# Generating Keys
+For the generation of HD keys, keys can exist as either a master key or a child key. Master keys are derived from a given secret, and child keys are derived from a master key from a given index, or a parsed derivation path for deriving specific nodes in a hierarchy. Stateless functionality for HD key derivation, and verification of key lineage, is provided by the **@iacobus/hd/key** entry point.
+
+## Master & Child Keys
+Master keys are derived from a secret using the `Hdsk.master` method, which expects the secret as a *Uint8Array*. The derived master key is returned as a new **Key** instance. The public `Key.key` property contains the HD key. A hash function is required to derive a new master key. Stateless functionality for deriving master keys is available from the `deriveMaster` function.
+
+Child keys are derived from an index and a **Key** instance using the `Key.child` method, which expects the index as a *number*. The target instance acts as the master key for child derivation, using the key's chain code as the secret, and using the same hash function. The derived child key is returned as a new **Key** instance. Stateless functionality for deriving child keys is available from the `deriveChild` function.
 
 *Example use:*
 ```ts
-import { SymmetricHD } from "@iacobus/hd";
+import { Hdsk } from "@iacobus/hd";
+import { sha256 } from "@noble/hashes/sha2";
 
-const str: string = "m / application: any / purpose: any / context: any / index: num";
-const schema = new SymmetricHD().schema(str);
-```
-## Derivation Path Parsing
-A derivation path is parsed using a schema to enforce type and validity. The number of indices may not exceed the number of segments from the schema, and each index must fall in the range **0** to **2³¹-1**. When an index is provided as a string, during parsing it converts to a 32 bit integer. The *parse* method of **PathSchema** expects the derivation ***path*** as a *string*.
+// Generate a new master key
+const h = sha256;
+const secret = new Uint8Array(32);
+const master = new Hdsk().master(h, secret);
 
-*Default derivation path:*
+// Generate a child key from the master key
+const child = master.child(42);
 ```
-m/42/0/1/0
-```
+
+### Nodes in a Hierarchy
+Keys at specific nodes in a hierarchy descending from a master key are derived from a derivation path and a **Key** instance using the `Key.node` method, which expects the derivation path as an *HDPath*. The target instance acts as the master key for deriving the node, using the key's chain code as the secret to initialize the first key in the sequence of child key indices, with subsequent keys are derived from their corresponding index and the chain code of the previous key in the hierarchy, repeating until the target node is derived. The same hash function as the master key is used throughout this process. The derived node is returned as a new **Key** instance. Stateless functionality for deriving nodes is available from the `deriveNode` function.
 
 *Example use:*
 ```ts
-import { SymmetricHD } from "@iacobus/hd";
+import { Hdsk } from "@iacobus/hd";
+import { sha256 } from "@noble/hashes/sha2";
 
-const str: string = "m / application: any / purpose: any / context: any / index: num";
-const schema = new SymmetricHD().schema(str);
-const path = schema.parse("m/42/0/1/0");
+// Use sha256 as the hash function
+const h = sha256;
+
+// Generate a new master key
+const secret = new Uint8Array(32);
+const master = new Hdsk().master(h, secret);
+
+// Parse a derivation path
+const str = "m / application: any / purpose: any / context: any / index: num";
+const schema = new Hdsk().schema(str);
+const path = schema.parse(h, "m/42/0/1/0");
+
+// Generate a node using a derivation path
+const node = master.node(path);
 ```
 
-# Key Derivation
-Derivation of HD keys always begins from the derivation of a master key from a secret. From a master key, a child key may be derived at a selected in-range index. Child keys may also be derived from other child keys. Child key derivation always derives a key at a depth of 1 deeper in the hierarchy than the parent node. For derivation in a nested hierarchy, a master or child key combined with a derivation path derives a child key at a node in the hierarchy corresponding to the indices contained in the path.
+### Key Lineage
+The lineage of a **Key** instance can be verified using the `Key.lineage` method, using the key's fingerprint to verify that it is the direct child of a given master key. The master key is expected as an *HDKey*. While master keys contain their own fingerprints, the lineage of master keys cannot be verified as they lack parent keys. The *boolean* result of the lineage verification is returned. Stateless functionality for lineage verification is available from the `lineage` function.
 
-## Master Keys
-Master keys are derived from a ***secret*** using the `master` method of **SymmetricHD**. The ***secret*** is expected as either a UTF-8 or hex-encoded *string*, or a *Uint8Array*. The *master* method returns a new instance of a `MasterKey`.
+Example use:
 ```ts
-import { SymmetricHD } from "@iacobus/hd";
+import { Hdsk } from "@iacobus/hd";
+import { sha256 } from "@noble/hashes/sha2";
 
-const secret: string = "747261636B6572706C61747A";
-const master = new SymmetricHD().master(secret);
-```
+// Generate a new master key
+const h = sha256;
+const secret = new Uint8Array(32);
+const master = new Hdsk().master(h, secret);
 
-## Child Keys
-Child keys are derived from an instance of a **MasterKey**, or an instance of another `ChildKey`, at a specified ***index***, using the `deriveChild` method. The ***index*** is expected as either a UTF-8 or hex-encoded *string*, or a *Uint8Array*. The *deriveChild* method returns a new instance of a *ChildKey*.
-```ts
-import { SymmetricHD } from "@iacobus/hd";
-
-const secret: string = "7265706C696372";
-const parent = new SymmetricHD().master(secret);
-const child = parent.deriveChild(2019);
-```
-
-## Path-Based Key Derivation
-Hierarchical deterministic keys in a nested hierarchy defined by a derivation path can be derived from a ***key*** and a ***path***, using the `derive` method of **SymmetricHD**. The ***key*** is expected as a **KeyInstance** (*MasterKey or ChildKey*), and the ***path*** is expected as a parsed derivation path. The *derive* method returns a new instance of a *ChildKey*.
-```ts
-import { SymmetricHD } from "@iacobus/hd";
-
-// New instance of SymmetricHD
-const hd = new SymmetricHD();
-
-// Define a schema and parse the derivation path
-const str: string = "m / application: any / purpose: any / context: any / index: num";
-const schema = hd.schema(str);
-const path = schema.parse("m/42/0/1/0");
-
-// Derive a master key
-const secret: string = "747261636B6572706C61747A";
-const master = hd.master(secret);
-
-// Derive the key from the master key and derivation path
-const key = hd.derive(master, path);
-```
-
-## Lineage Verification
-All keys, including master keys, include a fingerprint that acts as a unique identifier for the key, and can be used to verify that a key is derived from a given secret, or that it is the direct child of a parent key. The verification of key lineage is completed using the `lineage` method of a *MasterKey* or *ChildKey* instance. This method expects a ***parent*** as an *HDKey*, and returns a *boolean* result of the lineage verification.
-```ts
-import { SymmetricHD } from "@iacobus/hd";
-
-// Derive the parent and child keys
-const secret: string = "7265706C696372";
-const parent = new SymmetricHD().master(secret);
-const child = parent.deriveChild(2019);
+// Generate a child key from the master key
+const child = master.child(42);
 
 // Verify the lineage of the child key
-const lineage = child.lineage(parent.key);
+const related = child.lineage(master.key);
 ```
