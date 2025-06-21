@@ -1,8 +1,12 @@
 {
     "name": "@iacobus/hd",
-    "version": "1.0.3",
+    "version": "1.1.0",
     "license": "MIT",
-    "exports": {".": "./src/mod.ts"},
+    "exports": {
+        ".": "./src/mod.ts",
+        "./key": "./src/key.ts",
+        "./path": "./src/path.ts"
+    },
     "compilerOptions": {
         "strict": true,
         "lib": ["deno.ns", "deno.window", "esnext"]
@@ -24,7 +28,8 @@
         "include": ["tests/mod.test.ts"]
     },
     "imports": {
-        "@deno/dnt": "jsr:@deno/dnt@0.41.3",
-        "@noble/hashes": "npm:@noble/hashes@1.7.2"
+        "@deno/dnt": "jsr:@deno/dnt@0.42.1",
+        "@noble/hashes": "npm:@noble/hashes@1.8.0",
+        "@std/assert": "jsr:@std/assert@1.0.13"
     }
 }

@@ -1,5 +1,14 @@
-import { SymmetricHD } from "../src/mod.ts";
-import { bytesToHex } from "@noble/hashes/utils";
+/**
+ * @fileoverview Test script for the exports of the @iacobus/hd entry point.
+ * Completes a vectored test for HD symmetric key derivation.
+ * @author Jacob V. B. Haap <iacobus.xyz>
+ * @license MIT
+ */
+
+import { sha256 } from "npm:@noble/hashes@1.8.0/sha2";
+import { bytesToHex } from "npm:@noble/hashes@1.8.0/utils";
+import { assert } from "jsr:@std/assert@1.0.13";
+import { Hdsk } from "../src/mod.ts";
 
 /** Vector is an object for a test vector. */
 type Vector = {
@@ -7,89 +16,89 @@ type Vector = {
     key: string
 }
 
-/** vectors are Symmetric HD test vectors. */
+/** vectors are HDSK test vectors. */
 const vectors: Vector[] = [
     {
         "path": "m/42/0/1/0",
-        "key": "238cf83c3ee7c2596b38d9b93ba9f15c757dbb65870060422ecec51073019d39"
+        "key": "7bc626147a8441fd808a42dbfb889a083f1cbd3065b5921e1a28a53db0d3781f"
     },
     {
         "path": "m/42/0/1/1",
-        "key": "d174c452c402f765d6f85a360eaa91bb6386d5b2de737178fa320de4afc435cb"
+        "key": "4b5fdd55957768e3c3fde5e610a22da99f12a408f4dcbb570ddb61cf5d33e08c"
     },
     {
         "path": "m/42/0/1/2",
-        "key": "e0dbf06dfcaeb0bc2241c111a44b1dcd11aa1a73a149a07182ff141097018791"
+        "key": "4643a704151cdf68684ac0d9be1fbbba5911696067204291fc5ac56566b49c80"
     },
     {
         "path": "m/42/0/1/3",
-        "key": "0eb21f70c0677a335546324faf382935eca4e887aa04c0169c018fecd546d22d"
+        "key": "bb9fc738a31b8b01c74e3fc95a567ad6f3d6c194c1c79b35a626bb3adb388a1f"
     },
     {
         "path": "m/42/0/1/4",
-        "key": "a8505914a849a7a37e81847f539914838cd53d1501503439c0688605ce204424"
+        "key": "0d2128c047ed6af3dd6d2e08174e6dd38711d35640bcd0fccf8bd269e6a27451"
     },
     {
         "path": "m/42/0/1/5",
-        "key": "6baad567810839d4ccb92558f7174643a6fd8a64723bb1d49254c9a8d283441d"
+        "key": "d62d3d6c6a02894437c4d3053a2057c409abfc8e4d56b0406509d896f3b12636"
     },
     {
         "path": "m/42/0/1/6",
-        "key": "63ea6ca6530c534756f77aa7bfbad339137230318f4e31b46bc8eb4e0c82a702"
+        "key": "2e66f3d55aee7fcc0887b5d217419f2abc5b6f3313186cc61840002b2136aeba"
     },
     {
         "path": "m/42/0/1/7",
-        "key": "cf064451fdff06a471cddf625647d230bead69436a90ec811ff4c6cf8d67a7b2"
+        "key": "570481958950191a99f5e155d69f30949f6fccebd748488dcb57c04ef8a56d9d"
     },
     {
         "path": "m/42/0/1/8",
-        "key": "f2f5a7e494f0890467e577fa8a344d4bbb1d18d30e486b5e903cf1a48bb59476"
+        "key": "227643310206555c76dc746e4b199297294eeb61b005df87af9cee98a2a8f1e2"
     },
     {
         "path": "m/42/0/1/9",
-        "key": "1c9e5502c36d7b7ae12b233fc89cf96b983dc2b9fbc6d86658b0d5f0a56e5b61"
+        "key": "cc80f4247d3eae7ebfb0cbc2aaf9fac0c59c4b9de3893b737c6c2091cb48b9c6"
     },
     {
         "path": "m/42/0/1/10",
-        "key": "f8b16a5125d958f2a6c13d830004de7ec732213cb4f83df62f40a7af329cf213"
+        "key": "3806560559a126103816cfbc5adf303bbca73e0e6b0be6bc8e993728ee3b4201"
     },
     {
         "path": "m/42/0/1/11",
-        "key": "9606d6ab5fcb0efd7e1c47c8f86be621038ca8d656451a760d2b5fe3aebd24e7"
+        "key": "d0fbb1a48c618e6c821679933cc82975c9a4b1b92f0e232f16718f2339aee946"
     },
     {
         "path": "m/42/0/1/12",
-        "key": "824e9bc3ba2d41e3f310c4359c16afd37d6132d4fdf5e60e7283538aea784edb"
+        "key": "5a7956f7d8f5a70abe93ea9f8c232e2839fd9d55d8acab14f18aa1818394ab81"
+    },
+    {
+        "path": "m/42/0/1/13",
+        "key": "7188a0fb873e15b1f3259d4508c601bea6b638c80974c66676acfadb378cacca"
     },
     {
         "path": "m/42/0/1/14",
-        "key": "c002c310e7e4a8b8c1750614a9933aaf5d56b11f19b367bc60d7061e9efb23fc"
+        "key": "7d418c8fdb420857e5b67b04729a6e65b3fc5ed4f719f5a8f1a97fc43a098ab6"
     },
     {
         "path": "m/42/0/1/15",
-        "key": "87f6f5cecc075aae4f8c1506dc48977b2a3a8362f49af01b44bb8df229d4a168"
+        "key": "7bcd50cf2e8eb0412910b804aebb5ac2b6f0fd2436a6cfc0b5a9bd20e97d1f84"
     }
 ]
 
-// Test for SymmetricHD
-// First, a schema is parsed, and a master key is derived from a secret of a hex-encoded string.
-// Then, the test vectors are iterated over, for each using the derivation path to derive an HD
-// key from the master key, then checking that the embedded key in the derived HD key matches the
-// vector key. Finally, for each HD key derived, a child at index 42 is derived, which is then
-// used to test lineage verification with the child key and parent HD key.
-Deno.test(`SymmetricHD derives HD keys`, () => {
-    const hd = new SymmetricHD(); // New SymmetricHD instance
-    const str: string = "m / application: any / purpose: any / context: any / index: num"; // Schema string
-    const schema = hd.schema(str); // Parse the schema to create a new schema instance
-    const secret: string = "747261636B6572706C61747A"; // Define a secret as a hex string
-    const master = hd.master(secret); // Derive a master key
+// Test for HDSK
+Deno.test(`Hdsk derives HD keys`, () => {
+    const hd = new Hdsk(); // New instance of Hdsk
+    const h = sha256; // Use sha256 as the hash function
+    const str: string = "m / application: any / purpose: any / context: any / index: num";
+    const schema = hd.schema(str); // Parse the schema
+    const secret = new Uint8Array(32) // Create a secret of 32 zero bytes
+    const master = hd.master(h, secret); // Derive a master key from the hash and secret
     for (const {path, key} of vectors) {
-        const dp = schema.parse(path); // Parse the vector derivation path
-        const dk = hd.derive(master, dp); // Derive an HD key from the master key and path
-        const dkHex = bytesToHex(dk.key.key); // Encode the embedded key as hex
-        console.assert(dkHex === key, `mismatch for ${path}: expected "${key}", got "${dkHex}"`);
-        const child = dk.deriveChild(42); // Derive a child key at index 42
-        const lineage = child.lineage(dk.key); // Verify the lineage of the child
-        console.assert(lineage === true, `invalid key lineage encountered for child of "${dkHex}"`);
+        const dp = schema.parse(h, path); // Parse the vector derivation path
+        const node = master.node(dp); // Derive a new node from the master key using the path
+        const hex = bytesToHex(node.key.key); // Encode the embedded key as hex
+        assert(hex === key, `mismatch for ${path}: expected "${key}", got "${hex}"`);
+        const child = node.child(42); // Derive a child of the node at index 42
+        const lineage = child.lineage(node.key); // Verify the lineage of the child
+        assert(lineage === true, `invalid key lineage encountered for child of "${hex}"`);
     }
 });
