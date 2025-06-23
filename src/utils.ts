@@ -32,20 +32,14 @@ export function encodeInt(int: number): Uint8Array {
     return buf;
 }
 
-/** strToIndex obtains an integer in the range 0 to 2^31 - 1 from a given hash and string. */
+/** strToIndex obtains a 32 bit integer from a given hash and string. */
 export function strToIndex(h: CHash, str: string): number {
-    const sum = h.create().update(str).digest(); // Create a hash of the string
+    const sum = h.create().update(str).digest().slice(0, 4); // Create a hash of the string
     const buf = new DataView(new Uint8Array(sum).buffer); // Dataview of the hash digest
-    const value = buf.getUint32(0, false); // Get a 32 bit integer from the buffer
-    return value % 0x80000000; // Return integer in the defined range
+    return buf.getUint32(0, false); // Return 32 bit integer from the buffer
 }
 
-/** isValidIndex checks if a given index is in the range 0 to 2^31 - 1. */
-function isValidIndex(i: number): boolean {
-    return Number.isInteger(i) && i >= 0 && i <= 0x7FFFFFFF;
-}
-
-/** getIndex obtains an in-range integer index from a given hash, index string, and type. */
+/** getIndex obtains a 32 bit integer index from a given hash, index string, and type. */
 export function getIndex(h: CHash, index: string, type: string): number {
     if (!["num", "str", "any"].includes(type)) {
         throw new TypeError(`type "${type}" invalid for index`);
@@ -53,7 +47,11 @@ export function getIndex(h: CHash, index: string, type: string): number {
     let i: number;
     if (type === "num") {
         try {
-            i = parseInt(index); // Parse string to integer
+            const n = parseInt(index, 10); // Parse string to integer
+            if (!Number.isInteger(n) || n < 0 || n > 0xFFFFFFFF) {
+                throw new RangeError(`parsed index outside of uint32 range`)
+            }
+            i = n;
         } catch (error) {
             throw new TypeError(`invalid numeric index "${index}", ${error}`);
         }
@@ -65,7 +63,11 @@ export function getIndex(h: CHash, index: string, type: string): number {
         }
     } else {
         try {
-            i = parseInt(index); // Try parsing integer first
+            const n = parseInt(index, 10); // Try parsing integer first
+            if (!Number.isInteger(n) || n < 0 || n > 0xFFFFFFFF) {
+                throw new RangeError(`parsed index outside of uint32 range`)
+            }
+            i = n;
         } catch {
             try {
                 i = strToIndex(h, index); // Try string conversion next
@@ -74,11 +76,7 @@ export function getIndex(h: CHash, index: string, type: string): number {
             }
         }
     }
-    if (isValidIndex(i)) {
-        return i; // Return if i is in range
-    } else {
-        throw new RangeError(`out of range index "${i}"`);
-    }
+    return i;
 }
 
 /** fingerprint calculates a fingerprint from a given hash, parent key, and child key. */

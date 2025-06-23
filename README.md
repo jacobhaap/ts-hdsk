@@ -14,9 +14,9 @@ Both stateful and stateless functionality are provided, across three entry point
 ## Types
 Parsed derivation path schemas are of the `HDPath` type, and parsed derivation paths are of the `HDSchema` type. All keys derived by this library are of the `HDKey` type, an object that holds the 32 byte cryptographic key, 32 byte chain code, an integer representing the hierarchical depth, and a 16 byte fingerprint.
 ```ts
-export type HDSchema = [string, string][];
+type HDSchema = [string, string][];
 
-export type HDPath = number[];
+type HDPath = number[];
 
 type HDKey = {
     key: Uint8Array,

@@ -14,6 +14,12 @@ export type HDSchema = [string, string][];
 /** HDPath is a derivation path. */
 export type HDPath = number[];
 
+/** defaultSchema is the default derivation path schema */
+export const defaultSchema = "m / application: any / purpose: any / context: any / index: num";
+
+/** defaultPath is the default derivation path. */
+export const defaultPath = "m/42/0/1/0"
+
 /**
  * newSchema parses a new derivation path schema from a given string.
  * @example
@@ -23,10 +29,10 @@ export type HDPath = number[];
 export function newSchema(str: string): HDSchema {
     const segments = str.split(" / ");
     if (segments.length > 256) {
-        throw new RangeError(`derivation path schema cannot exceed 256 segments, got "${segments.length}"`);
+        throw new RangeError(`schema cannot exceed 256 segments, got "${segments.length}"`);
     }
     if (segments[0] !== "m") {
-        throw new SyntaxError(`root segment in schema must be designated by "m", got "${segments[0]}"`);
+        throw new SyntaxError(`schema must begin with "m", got "${segments[0]}"`);
     }
     const allowed = new Set(["str", "num", "any"]); // Allow strings, numbers, or either
     const result: HDSchema = []; // Allocate array for the parsed schema
@@ -52,7 +58,7 @@ export function newPath(h: CHash, str: string, schema: HDSchema): HDPath {
     const pathArray = str.split("/");
     const [root, ...indices] = pathArray;
     if (root != "m") {
-        throw new SyntaxError(`master key in derivation path must be designated by "m", got "${root}"`);
+        throw new SyntaxError(`derivation path must begin with "m", got "${root}"`);
     }
     if (indices.length > schema.length) {
         throw new RangeError(`too many indices in derivation path: got "${indices.length}", expected "${schema.length}"`);
