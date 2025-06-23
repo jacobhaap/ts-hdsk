@@ -47,7 +47,8 @@ export function deriveMaster(h: CHash, secret: Uint8Array): HDKey {
  * const child = deriveChild(h, master, 42);
  */
 export function deriveChild(h: CHash, master: HDKey, index: number): HDKey {
-    const info1 = encodeInt(index); // Context info from bytes of encoded index
+    index = index >>> 0; // Emulate 32 bit integer
+    const info1 = encodeInt(index); // Context info from encoded index
     const salt = calcSalt(h, master.code, info1); // Derive salt from the master code
     const info2 = "CHILD" + index.toString(); // Construct info for HKDF form CHILD + index string
     const ikm = hkdf(h, master.code, salt, info2, 64); // Derive ikm from master chain code
